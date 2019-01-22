@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.spring.bookstore.member.persistance.MemberDAO">
+
+	<select id="getPwd" resultType="com.spring.bookstore.member.vo.Member">
+		SELECT user_pw, accept_status FROM users WHERE user_id=#{user_id} AND permission='customer'
+	</select>
+	
+	<select id="checkId" resultType="int">
+		SELECT COUNT(*) as cnt FROM users WHERE user_id=#{id}
+	</select>
+	
+	<insert id="signUpDo" parameterType="com.spring.bookstore.member.vo.User">
+		insert into users(
+				USER_ID
+				, USER_PW
+				, NAME
+				, SSN
+				, EMAIL
+				, ZIPCODE
+				, ADDRESS1
+				, ADDRESS2
+				, PHONE_NUMBER
+				, HIRE_DATE
+				, ACCEPT_CODE
+				, DELETE_STATUS
+				, PERMISSION)
+				values(
+				#{user_id}, #{user_pw}, #{name}
+				, #{ssn}, #{email}, #{zipcode}
+				, #{address1}, #{address2}, #{phone_number}
+				, #{hire_date}, #{accept_code}, 0, 'customer')
+	</insert>
+	
+	<update id="emailCheck" parameterType="String">
+		UPDATE users SET accept_status=1 WHERE ACCEPT_CODE=#{accept_code}
+	</update>
+	
+	<insert id="cartAddDo" parameterType="map">
+		<![CDATA[
+		MERGE INTO carts c
+				USING ( SELECT #{user_id} user_id, #{book_code} book_code, #{wish_stock} wish_stock
+					FROM dual) s
+				ON ( c.user_id = s.user_id 
+					AND c.book_code = s.book_code)
+				WHEN MATCHED THEN
+					UPDATE SET c.wish_stock = c.wish_stock + s.wish_stock
+					WHERE c.wish_stock+s.wish_stock <= (SELECT stock FROM books WHERE book_code = s.book_code)
+				WHEN NOT MATCHED THEN
+					INSERT (c.user_id, c.book_code, c.wish_stock)
+					VALUES (s.user_id, s.book_code, s.wish_stock)
+				WHERE s.wish_stock <= (SELECT stock FROM books WHERE book_code = s.book_code)
+		]]>
+	</insert>
+	
+	<select id="cartTotalPrice" resultType="int">
+		SELECT NVL(SUM(b.price*c.wish_stock), 0) as total_price
+				FROM carts c JOIN books b
+				ON c.book_code = b.book_code 
+				WHERE c.user_id = #{user_id}
+	</select>
+	
+	<select id="cartList" resultType="com.spring.bookstore.member.vo.Cart">
+		SELECT c.book_code
+				, board.board_id
+				, b.image_path
+				, b.title 
+				, b.author
+				, b.price
+				, c.wish_stock
+				, b.price*c.wish_stock as total_price
+				FROM carts c JOIN books b
+				ON c.book_code = b.book_code 
+				JOIN book_board board
+				ON b.book_code = board.book_code
+				WHERE c.user_id = #{user_id}
+	</select>
+	
+	<delete id="cartDelDo" parameterType="map">
+		DELETE FROM carts WHERE user_id=#{user_id} AND book_code=#{code}
+	</delete>
+</mapper>

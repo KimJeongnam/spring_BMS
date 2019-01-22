@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.spring.bookstore.share.persistance.ShareDAO">
+	
+	<select id="getCategorys" resultType="com.spring.bookstore.share.vo.Category">
+	SELECT level, category_id, LPAD(' ', 2*(level-1)) || category_name  as category_name, 
+		super_id, CONNECT_BY_ISLEAF ISLEAF 
+		FROM categorys
+		START WITH super_id IS NULL
+		CONNECT BY PRIOR category_id = super_id
+		ORDER SIBLINGS BY category_id ASC
+	</select>
+	
+	<select id="getTotalBoardCnt" parameterType="com.spring.bookstore.share.vo.SearchVO" resultType="int">
+	SELECT COUNT(*) as cnt FROM book_board board 
+		<where>
+			<if test="category_id != 0">
+				board.category_id=#{category_id}
+			</if>
+			<![CDATA[
+				AND board.delete_status <> 1
+			]]>
+		</where>
+	</select>
+	
+	<select id="getBoardList" parameterType="com.spring.bookstore.share.vo.SearchVO" 
+		resultType="com.spring.bookstore.share.vo.BoardVO">
+		SELECT *
+			FROM( 
+				SELECT
+				ROWNUM as rnum
+				, board_id
+				, context
+				, readcnt
+				, book_code
+				, title
+				, author
+				, price
+				, stock
+				, publisher
+				, TO_CHAR(publish_date, 'yyyy-mm-dd') as publish_date
+				, reg_date
+				, image_path
+				, rating
+				, delete_status
+				, category_id
+				, category_name
+				, super_id
+				, super_name
+				FROM(SELECT 
+				    board_id, board.context, board.readcnt, b.book_code, b.title, b.author, b.price, b.stock, b.publisher, b.publish_date, b.reg_date
+				    , b.image_path, b.rating, b.delete_status, c.category_id, c.category_name, c.super_id
+				    , super.category_name as super_name
+				    FROM (SELECT * FROM book_board
+				    <![CDATA[
+				        WHERE delete_status <> 1
+					]]>
+				        ORDER BY board_id DESC 
+				        ) board 
+				    JOIN books b ON board.book_code = b.book_code 
+				    JOIN categorys c ON c.category_id = board.category_id JOIN categorys super ON c.super_id = super.category_id
+					<where>
+						<if test="target != null and keyword != null">
+							AND b.title like '%'|| #{keyword} ||'%' OR board.context like '%'|| #{keyword} ||'%'
+						</if>
+						<if test="category_id != 0">
+							AND board.category_id=#{category_id, jdbcType=INTEGER}
+						</if>
+					</where>
+				    ORDER BY 
+				    <if test="hot">
+				    	b.rating DESC, board.readcnt DESC,
+				    </if>
+				    reg_date DESC, title ASC)
+				     
+				)
+				<![CDATA[
+					WHERE rnum >= #{start} AND rnum <= #{end}
+				]]>
+	</select>
+	
+	<select id="getBookInfo" parameterType="int" resultType="com.spring.bookstore.share.vo.BoardVO">
+	SELECT
+		ROWNUM as rnum
+		, board_id     
+		, context      
+		, readcnt      
+		, book_code    
+		, title        
+		, author       
+		, price        
+		, stock    
+		, publisher    
+		, TO_CHAR(publish_date, 'yyyy-mm-dd') as publish_date  
+		, reg_date     
+		, image_path    
+		, rating       
+		, delete_status 
+		, category_id   
+		, category_name 
+		, super_id      
+		, super_name    
+		FROM(SELECT 
+		    board_id, board.context, board.readcnt, b.book_code, b.title, b.author, b.price, b.stock, b.publisher, b.publish_date, b.reg_date
+		    , b.image_path, b.rating, b.delete_status, c.category_id, c.category_name, c.super_id
+		    , super.category_name as super_name
+		    FROM (SELECT * FROM book_board
+		    <![CDATA[
+		        WHERE delete_status <> 1
+		    ]]>
+		        ORDER BY board_id DESC                
+		        ) board 
+		    JOIN books b ON board.book_code = b.book_code 
+		    JOIN categorys c ON c.category_id = board.category_id JOIN categorys super ON c.super_id = super.category_id
+		    WHERE board.board_id = #{board_id}
+		    ORDER BY reg_date DESC, title ASC)
+	</select>
+</mapper>
