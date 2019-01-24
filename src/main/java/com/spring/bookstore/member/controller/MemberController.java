@@ -19,9 +19,9 @@ public class MemberController {
 
 	private static final Logger logger = LoggerFactory.getLogger(MemberController.class);
 
-	@RequestMapping("login")
-	public String login(HttpServletRequest request, RedirectAttributes model) throws Exception {
-		logger.info("login()");
+	@RequestMapping("/loginDo")
+	public String loginDo(HttpServletRequest request, RedirectAttributes model) throws Exception {
+		logger.info("loginDo()");
 
 		service.loginDo(request, model);
 
@@ -29,9 +29,9 @@ public class MemberController {
 		return "redirect:" + referer;
 	}
 
-	@RequestMapping("logout")
-	public String logout(HttpServletRequest request, RedirectAttributes model) throws Exception {
-		logger.info("logout()");
+	@RequestMapping("/logoutDo")
+	public String logoutDo(HttpServletRequest request, RedirectAttributes model) throws Exception {
+		logger.info("logoutDo()");
 
 		service.logoutDo(request, model);
 

@@ -19,7 +19,7 @@
 				</c:otherwise>
 			</c:choose>
 			
-			<sec:authorize access="hasRole('ROLE_USER')"> 
+			<sec:authorize access="hasRole('ROLE_GUEST')"> 
 				<a href="#" onclick="window.location='${contextPath}/j_spring_security_logout';"><%=session.getAttribute("userId")%>
 						/로그아웃 </a>
 			</sec:authorize>
@@ -32,7 +32,7 @@
 
 				<div id="login-table">
 					<h1>로그인</h1>
-					<form action="${contextPath }/security_login" method="get"> <!-- action="login" -->
+					<form action="${contextPath }/security_login" method="post"> <!-- action="login" -->
 						<table style="width: 100%;">
 							<tr>
 								<th>아이디</th>

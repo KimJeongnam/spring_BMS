@@ -50,11 +50,9 @@ public class ShareController {
 	@RequestMapping("/loginForm")
 	public String loginForm(HttpServletRequest request, RedirectAttributes redirectAttributes) {
 		
-		redirectAttributes.addFlashAttribute("openLogin", true);
+		redirectAttributes.addFlashAttribute("openLogin", "open!");
 		
-		
-		String referer = request.getHeader("referer");
-		return "redirect:" + referer;
+		return "redirect:index";
 	}
 	
 	@RequestMapping("/loginFail")
